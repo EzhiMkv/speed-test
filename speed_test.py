@@ -81,7 +81,8 @@ def main() -> int:
             continue
         sizes.append(size)
         durations.append(elapsed)
-        print(f"  запрос {i:>2}/{args.count}: {format_seconds(elapsed):>9}  {format_bytes(size):>11}")
+        speed = size * 8 / elapsed / 1_000_000
+        print(f"  запрос {i:>2}/{args.count}: {format_seconds(elapsed):>9}  {format_bytes(size):>11}  {speed:>10.2f} Мбит/с")
 
     if not durations:
         print("\nНи один запрос не завершился успешно.", file=sys.stderr)
@@ -99,6 +100,7 @@ def main() -> int:
     if failed:
         print(f"Неудачных запросов:    {failed}")
     print(f"Среднее время запроса: {format_seconds(total_time / len(durations))}")
+    print(f"Мин/макс время:        {format_seconds(min(durations))} / {format_seconds(max(durations))}")
     print(f"Общий объём данных:    {format_bytes(total_bytes)}")
     print(f"Суммарное время:       {format_seconds(total_time)}")
     print(f"Скорость скачивания:   {speed_mbit:.2f} Мбит/с ({speed_mbyte:.2f} МБ/с)")
