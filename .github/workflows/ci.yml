@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Syntax check
+        run: python3 -m py_compile speed_test.py
+
+      - name: Smoke test (local server)
+        run: |
+          dd if=/dev/urandom of=/tmp/big.bin bs=1M count=8 status=none
+          python3 -m http.server 8765 --directory /tmp >/dev/null 2>&1 &
+          sleep 1
+          python3 speed_test.py http://127.0.0.1:8765/big.bin | tee output.log
+          grep -q "Скорость скачивания" output.log
+          grep -q "10 из 10" output.log
+
+      - name: Failure handling (closed port)
+        run: |
+          if python3 speed_test.py http://127.0.0.1:9 -n 1 --timeout 3; then
+            echo "ожидали ненулевой код выхода"
+            exit 1
+          fi
