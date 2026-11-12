@@ -5,7 +5,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from speed_test import error_reason, format_bytes, format_seconds, parse_args
+from speed_test import (
+    error_reason,
+    format_bytes,
+    format_seconds,
+    parse_args,
+    percentile,
+    request_row,
+)
 
 
 class FormatBytesTests(unittest.TestCase):
@@ -28,6 +35,29 @@ class FormatSecondsTests(unittest.TestCase):
 
     def test_seconds(self):
         self.assertEqual(format_seconds(2.5), "2.50 с")
+
+
+class PercentileTests(unittest.TestCase):
+    def test_median_odd(self):
+        self.assertEqual(percentile([5, 1, 3], 50), 3)
+
+    def test_median_even_interpolates(self):
+        self.assertEqual(percentile([1, 2, 3, 4], 50), 2.5)
+
+    def test_p95_interpolates(self):
+        self.assertEqual(percentile([float(i) for i in range(1, 11)], 95), 9.55)
+
+    def test_single_value(self):
+        self.assertEqual(percentile([7], 50), 7)
+
+
+class RequestRowTests(unittest.TestCase):
+    def test_row_fields(self):
+        row = request_row("прогрев:", 1.0, 1_000_000)
+        self.assertTrue(row.startswith("  прогрев:"))
+        self.assertIn("1.00 с", row)
+        self.assertIn("1.00 МБ", row)
+        self.assertIn("8.00 Мбит/с", row)
 
 
 class ErrorReasonTests(unittest.TestCase):
@@ -62,6 +92,10 @@ class ParseArgsTests(unittest.TestCase):
     def test_rejects_missing_scheme(self):
         with self.assertRaises(SystemExit):
             parse_args(["example.com/f"])
+
+    def test_no_warmup_flag(self):
+        self.assertFalse(parse_args(["https://example.com/f"]).no_warmup)
+        self.assertTrue(parse_args(["--no-warmup", "https://example.com/f"]).no_warmup)
 
 
 if __name__ == "__main__":
