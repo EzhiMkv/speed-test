@@ -20,6 +20,9 @@ jobs:
       - name: Syntax check
         run: python3 -m py_compile speed_test.py
 
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
       - name: Smoke test (local server)
         run: |
           dd if=/dev/urandom of=/tmp/big.bin bs=1M count=8 status=none
